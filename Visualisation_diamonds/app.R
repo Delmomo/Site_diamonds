@@ -38,7 +38,7 @@ ui <- fluidPage(
                   label = "Prix maximum :",
                   min = 0,
                   max = 20000,
-                  value = 200),
+                  value = 3000),
       
       actionButton(inputId = "bouton", 
                    label = "Visualiser le graphiphe")
