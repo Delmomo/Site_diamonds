@@ -8,6 +8,13 @@
 #
 
 library(shiny)
+library(dplyr)
+library(ggplot2)
+library(shinylive)
+library(DT)
+library(bslib)
+library(thematic)
+library(plotly)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
