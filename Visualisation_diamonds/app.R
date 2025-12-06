@@ -1,11 +1,5 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
+
+# Imporation des packages ----
 
 library(shiny)
 library(dplyr)
@@ -16,43 +10,75 @@ library(bslib)
 library(thematic)
 library(plotly)
 
-# Define UI for application that draws a histogram
+# Visualisation de la Data ----
+
+data("diamonds")
+
+
+# UI ----
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
+  theme = bs_theme(version = 5, bootswatch = "minty"), 
+  titlePanel("Exploration de la BDD Diamonds"),
+  
+  sidebarLayout(
+    
+    sidebarPanel(
+      
+      radioButtons(inputId = "Bouton_rose",
+                   label = "Colorier en rose ?",
+                   choices = c("Oui", "Non"),
+                   selected = "Non"),
+      
+      selectInput(inputId = "color",
+                  label = "Choisir une couleur à filtrer :",
+                  choices = levels(diamonds$color),
+                  selected = "D"),
+      
+      sliderInput(inputId = "prix",
+                  label = "Prix maximum :",
+                  min = 0,
+                  max = 20000,
+                  value = 5000),
+      
+      actionButton(inputId = "bouton", 
+                   label = "Visualiser le graphiphe")
+    ), 
+    
+    
+    mainPanel(
+      plotlyOutput("distPlot"),
+      DTOutput("Tab")
     )
+  ) 
 )
 
-# Define server logic required to draw a histogram
+# Server ----
 server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
-    })
+  
+  rv <- reactiveValues(df = diamonds, choix_rose = "Non")
+  
+  observeEvent(input$bouton, {
+    rv$df <- diamonds |> 
+      filter(color == input$color) |> 
+      filter(price <= input$prix)
+    rv$choix_rose <- input$Bouton_rose
+    
+  })
+  
+  output$distPlot <- renderPlotly({
+    couleur_point <- ifelse(rv$choix_rose == "Oui", "pink", "black")
+    g <- ggplot(rv$df, aes(x = carat, y = price)) +
+      geom_point(color = couleur_point) +
+      theme_minimal() +
+      labs(title = paste("Prix :", input$prix, "& Couleur :", input$color))
+    ggplotly(g)
+  })
+  
+  output$Tab <- renderDT({
+    rv$df
+  })
 }
 
-# Run the application 
+# Lancer l'Application Web ----
+
 shinyApp(ui = ui, server = server)
